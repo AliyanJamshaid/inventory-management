@@ -6,18 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, ShoppingCart, Package, TrendingUp, DollarSign } from "lucide-react";
-import { useSalesOrders, useSOStats, useDeleteSO } from "@/hooks/useSalesOrders";
-import { SOTable } from "@/components/features/SOTable";
-import { SOStatus, PaymentStatus } from "@/types/salesOrder";
+import { Plus, Search, FileText, DollarSign, AlertCircle, TrendingUp } from "lucide-react";
+import { useInvoices, useInvoiceStats, useDeleteInvoice } from "@/hooks/useInvoices";
+import { InvoiceTable } from "@/components/features/InvoiceTable";
+import { InvoiceStatus } from "@/types/invoice";
 import { useToast } from "@/components/ui/toast";
 
-export default function SalesOrdersPage() {
+export default function InvoicesPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<SOStatus | "all">("all");
-  const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | "all">("all");
-  const [sortBy, setSortBy] = useState<"orderDate" | "total">("orderDate");
+  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">("all");
+  const [sortBy, setSortBy] = useState<"invoiceDate" | "dueDate" | "total">("invoiceDate");
 
   const { toast } = useToast();
 
@@ -25,40 +24,39 @@ export default function SalesOrdersPage() {
   const filters = {
     search: searchTerm || undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
-    paymentStatus: paymentFilter !== "all" ? paymentFilter : undefined,
     sortBy,
     sortOrder: "desc" as const,
   };
 
-  const { data: ordersData, isLoading } = useSalesOrders(filters);
-  const { data: stats } = useSOStats();
-  const deleteMutation = useDeleteSO();
+  const { data: invoicesData, isLoading } = useInvoices(filters);
+  const { data: stats } = useInvoiceStats();
+  const deleteMutation = useDeleteInvoice();
 
-  const orders = ordersData?.data || [];
+  const invoices = invoicesData?.data || [];
 
-  const handleDelete = async (order: any) => {
-    if (order.status !== "draft") {
+  const handleDelete = async (invoice: any) => {
+    if (invoice.status !== "draft") {
       toast({
         title: "Error",
-        description: "Only draft orders can be deleted",
+        description: "Only draft invoices can be deleted",
         type: "error",
       });
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete order ${order.orderNumber}?`)) return;
+    if (!confirm(`Are you sure you want to delete invoice ${invoice.invoiceNumber}?`)) return;
 
     try {
-      await deleteMutation.mutateAsync(order._id);
+      await deleteMutation.mutateAsync(invoice._id);
       toast({
         title: "Success",
-        description: "Sales order deleted successfully",
+        description: "Invoice deleted successfully",
         type: "success",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete order",
+        description: error instanceof Error ? error.message : "Failed to delete invoice",
         type: "error",
       });
     }
@@ -69,12 +67,12 @@ export default function SalesOrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Sales Orders</h1>
-          <p className="text-gray-500">Manage customer sales orders</p>
+          <h1 className="text-3xl font-bold">Invoices</h1>
+          <p className="text-gray-500">Manage customer invoices and payments</p>
         </div>
-        <Button onClick={() => router.push("/sales-orders/new")} className="gap-2">
+        <Button onClick={() => router.push("/invoices/new")} className="gap-2">
           <Plus className="h-4 w-4" />
-          Create Order
+          Create Invoice
         </Button>
       </div>
 
@@ -83,48 +81,52 @@ export default function SalesOrdersPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-gray-500" />
+              <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
+              <FileText className="h-4 w-4 text-gray-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalOrders}</div>
+              <div className="text-2xl font-bold">{stats.totalInvoices}</div>
               <p className="text-xs text-gray-500">
-                {stats.processingOrders} processing
+                {stats.paidInvoices} paid
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
-              <Package className="h-4 w-4 text-blue-500" />
+              <CardTitle className="text-sm font-medium">Total Outstanding</CardTitle>
+              <DollarSign className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.confirmedOrders}</div>
-              <p className="text-xs text-gray-500">Ready to process</p>
+              <div className="text-2xl font-bold">${stats.totalOutstanding.toFixed(2)}</div>
+              <p className="text-xs text-gray-500">Unpaid balance</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Delivered</CardTitle>
-              <Package className="h-4 w-4 text-green-500" />
+              <CardTitle className="text-sm font-medium">Overdue</CardTitle>
+              <AlertCircle className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.deliveredOrders}</div>
-              <p className="text-xs text-gray-500">Completed orders</p>
+              <div className="text-2xl font-bold text-red-600">
+                {stats.overdueInvoices}
+              </div>
+              <p className="text-xs text-gray-500">
+                ${stats.totalOverdue.toFixed(2)} overdue
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-gray-500" />
+              <TrendingUp className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
               <p className="text-xs text-gray-500">
-                Avg: ${stats.averageOrderValue.toFixed(2)}
+                ${stats.totalPaid.toFixed(2)} collected
               </p>
             </CardContent>
           </Card>
@@ -138,7 +140,7 @@ export default function SalesOrdersPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
-                placeholder="Search by SO number..."
+                placeholder="Search by invoice number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -152,23 +154,11 @@ export default function SalesOrdersPage() {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="shipped">Shipped</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={paymentFilter} onValueChange={(value) => setPaymentFilter(value as any)}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Payment" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Payments</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
                 <SelectItem value="partial">Partial</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="overdue">Overdue</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
 
@@ -177,7 +167,8 @@ export default function SalesOrdersPage() {
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="orderDate">Order Date</SelectItem>
+                <SelectItem value="invoiceDate">Invoice Date</SelectItem>
+                <SelectItem value="dueDate">Due Date</SelectItem>
                 <SelectItem value="total">Total Amount</SelectItem>
               </SelectContent>
             </Select>
@@ -185,16 +176,16 @@ export default function SalesOrdersPage() {
         </CardContent>
       </Card>
 
-      {/* Orders Table */}
+      {/* Invoices Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Sales Orders</CardTitle>
+          <CardTitle>Invoices</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8">Loading...</div>
           ) : (
-            <SOTable orders={orders} onDelete={handleDelete} />
+            <InvoiceTable invoices={invoices} onDelete={handleDelete} />
           )}
         </CardContent>
       </Card>
