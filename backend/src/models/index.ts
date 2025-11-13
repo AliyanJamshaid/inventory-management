@@ -22,6 +22,9 @@ import Payment from './Payment';
 import Notification from './Notification';
 import ActivityLog from './ActivityLog';
 import Settings from './Settings';
+import CustomField from './CustomField';
+import WorkflowDefinition from './WorkflowDefinition';
+import StatusHistory from './StatusHistory';
 
 export {
   Category,
@@ -43,6 +46,9 @@ export {
   Notification,
   ActivityLog,
   Settings,
+  CustomField,
+  WorkflowDefinition,
+  StatusHistory,
 };
 
 export default {
@@ -65,4 +71,7 @@ export default {
   Notification,
   ActivityLog,
   Settings,
+  CustomField,
+  WorkflowDefinition,
+  StatusHistory,
 };

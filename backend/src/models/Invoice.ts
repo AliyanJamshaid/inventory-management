@@ -181,6 +181,15 @@ const invoiceSchema = new Schema<IInvoice>(
       trim: true,
       maxlength: [2000, 'Notes cannot exceed 2000 characters'],
     },
+
+    /**
+     * Custom fields (user-defined dynamic fields)
+     */
+    customFields: {
+      type: Map,
+      of: Schema.Types.Mixed,
+      default: new Map(),
+    },
   },
   {
     timestamps: true,

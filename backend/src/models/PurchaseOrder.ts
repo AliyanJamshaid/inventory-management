@@ -161,6 +161,15 @@ const purchaseOrderSchema = new Schema<IPurchaseOrder>(
     },
 
     /**
+     * Custom fields (user-defined dynamic fields)
+     */
+    customFields: {
+      type: Map,
+      of: Schema.Types.Mixed,
+      default: new Map(),
+    },
+
+    /**
      * User who created the order
      */
     createdBy: {

@@ -255,6 +255,129 @@ export const generateTokenPair = (payload: {
   };
 };
 
+/**
+ * Granular permission-based authorization middleware
+ * Checks if authenticated user has a specific permission
+ * @param permission - Permission key (module.resource.action)
+ */
+export const requirePermission = (permission: string) => {
+  return async (
+    req: IAuthRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response | void> => {
+    if (!req.user) {
+      logAuth('Permission check failed: User not authenticated', undefined, {
+        url: req.url,
+      });
+      return sendUnauthorized(res, 'Authentication required.');
+    }
+
+    try {
+      const { checkUserPermission } = await import('../utils/permissionHelper');
+      const hasPermission = await checkUserPermission(req.user.userId, permission);
+
+      if (!hasPermission) {
+        logAuth('Permission check failed: Insufficient permissions', req.user.userId, {
+          url: req.url,
+          requiredPermission: permission,
+        });
+        return sendForbidden(
+          res,
+          `You do not have permission to perform this action. Required: ${permission}`
+        );
+      }
+
+      logAuth('Permission check passed', req.user.userId, {
+        url: req.url,
+        permission,
+      });
+
+      next();
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error('Permission check error'), {
+        url: req.url,
+        permission,
+      });
+      return sendForbidden(res, 'Permission verification failed.');
+    }
+  };
+};
+
+/**
+ * Check if user has all of the specified permissions (AND logic)
+ * @param permissions - Array of permission keys
+ */
+export const requireAllPermissions = (permissions: string[]) => {
+  return async (
+    req: IAuthRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response | void> => {
+    if (!req.user) {
+      return sendUnauthorized(res, 'Authentication required.');
+    }
+
+    try {
+      const { checkUserPermissions } = await import('../utils/permissionHelper');
+      const hasAllPermissions = await checkUserPermissions(req.user.userId, permissions);
+
+      if (!hasAllPermissions) {
+        logAuth('Permission check failed: Missing required permissions', req.user.userId, {
+          url: req.url,
+          requiredPermissions: permissions,
+        });
+        return sendForbidden(
+          res,
+          `You do not have all required permissions. Required: ${permissions.join(', ')}`
+        );
+      }
+
+      next();
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error('Permission check error'));
+      return sendForbidden(res, 'Permission verification failed.');
+    }
+  };
+};
+
+/**
+ * Check if user has any of the specified permissions (OR logic)
+ * @param permissions - Array of permission keys
+ */
+export const requireAnyPermission = (permissions: string[]) => {
+  return async (
+    req: IAuthRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response | void> => {
+    if (!req.user) {
+      return sendUnauthorized(res, 'Authentication required.');
+    }
+
+    try {
+      const { checkUserAnyPermission } = await import('../utils/permissionHelper');
+      const hasAnyPermission = await checkUserAnyPermission(req.user.userId, permissions);
+
+      if (!hasAnyPermission) {
+        logAuth('Permission check failed: None of the permissions matched', req.user.userId, {
+          url: req.url,
+          requiredPermissions: permissions,
+        });
+        return sendForbidden(
+          res,
+          `You do not have any of the required permissions. Required (any): ${permissions.join(', ')}`
+        );
+      }
+
+      next();
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error('Permission check error'));
+      return sendForbidden(res, 'Permission verification failed.');
+    }
+  };
+};
+
 export default {
   authenticate,
   authenticateRefreshToken,
@@ -266,4 +389,7 @@ export default {
   generateAccessToken,
   generateRefreshToken,
   generateTokenPair,
+  requirePermission,
+  requireAllPermissions,
+  requireAnyPermission,
 };

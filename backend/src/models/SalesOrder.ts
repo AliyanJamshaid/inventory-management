@@ -170,6 +170,15 @@ const salesOrderSchema = new Schema<ISalesOrder>(
     },
 
     /**
+     * Custom fields (user-defined dynamic fields)
+     */
+    customFields: {
+      type: Map,
+      of: Schema.Types.Mixed,
+      default: new Map(),
+    },
+
+    /**
      * User who created the order
      */
     createdBy: {

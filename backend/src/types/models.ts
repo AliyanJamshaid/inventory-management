@@ -149,9 +149,14 @@ export interface IUser extends Document {
  * Permission Document Interface
  */
 export interface IPermission extends Document {
-  resource: string;
-  actions: string[];
+  module: string; // e.g., "products", "inventory", "customers"
+  resource: string; // e.g., "product", "stock", "customer"
+  action: string; // e.g., "create", "read", "update", "delete", "approve"
+  displayName: string; // e.g., "Create Products"
   description?: string;
+  category: string; // group permissions, e.g., "Inventory Management"
+  conditions?: any; // field-level or row-level permissions
+  isSystemPermission: boolean; // can't be deleted
   createdAt: Date;
   updatedAt: Date;
 }
@@ -161,11 +166,20 @@ export interface IPermission extends Document {
  */
 export interface IRole extends Document {
   name: string;
+  displayName: string;
   description?: string;
   permissions: Types.ObjectId[];
-  isDefault: boolean;
+  isSystemRole: boolean; // built-in roles (can't delete)
+  isDefault: boolean; // assigned to new users
+  hierarchy: number; // 1 = highest (admin), 100 = lowest
+  customSettings?: Map<string, any>; // role-specific settings
+  createdBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
+
+  // Methods
+  addPermission(permissionId: Types.ObjectId): Promise<void>;
+  removePermission(permissionId: Types.ObjectId): Promise<void>;
 }
 
 /**
@@ -177,6 +191,7 @@ export interface ICategory extends Document {
   parent?: Types.ObjectId;
   slug: string;
   image?: string;
+  customFields: Map<string, any>;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -218,6 +233,7 @@ export interface IProduct extends Document {
   images: string[];
   variants: Types.ObjectId[];
   attributes: Map<string, any>;
+  customFields: Map<string, any>;
   isActive: boolean;
   createdBy: Types.ObjectId;
   createdAt: Date;
@@ -237,6 +253,7 @@ export interface IWarehouse extends Document {
   zipCode: string;
   phone?: string;
   email?: string;
+  customFields: Map<string, any>;
   isActive: boolean;
   manager?: Types.ObjectId;
   createdAt: Date;
@@ -319,6 +336,7 @@ export interface ISupplier extends Document {
   taxId?: string;
   paymentTerms?: string;
   rating?: number;
+  customFields: Map<string, any>;
   isActive: boolean;
   notes?: string;
   createdAt: Date;
@@ -352,6 +370,7 @@ export interface IPurchaseOrder extends Document {
   tax: number;
   shipping: number;
   total: number;
+  customFields: Map<string, any>;
   approvedBy?: Types.ObjectId;
   receivedBy?: Types.ObjectId;
   notes?: string;
@@ -380,6 +399,7 @@ export interface ICustomer extends Document {
   currentCredit: number;
   paymentTerms?: string;
   loyaltyPoints: number;
+  customFields: Map<string, any>;
   isActive: boolean;
   notes?: string;
   createdAt: Date;
@@ -415,6 +435,7 @@ export interface ISalesOrder extends Document {
   shipping: number;
   total: number;
   paymentStatus: PaymentStatus;
+  customFields: Map<string, any>;
   processedBy?: Types.ObjectId;
   notes?: string;
   createdBy: Types.ObjectId;
@@ -454,6 +475,7 @@ export interface IInvoice extends Document {
   paidAmount: number;
   balanceAmount: number;
   paymentMethod?: PaymentMethod;
+  customFields: Map<string, any>;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -512,4 +534,153 @@ export interface ISettings extends Document {
   dataType: string;
   updatedBy?: Types.ObjectId;
   updatedAt: Date;
+}
+
+/**
+ * Custom Field Type Enum
+ */
+export enum CustomFieldType {
+  TEXT = 'text',
+  NUMBER = 'number',
+  DATE = 'date',
+  BOOLEAN = 'boolean',
+  SELECT = 'select',
+  MULTISELECT = 'multiselect',
+  TEXTAREA = 'textarea',
+  EMAIL = 'email',
+  PHONE = 'phone',
+  URL = 'url',
+  FILE = 'file',
+  JSON = 'json',
+}
+
+/**
+ * Custom Field Entity Type Enum
+ */
+export enum CustomFieldEntityType {
+  PRODUCT = 'product',
+  CUSTOMER = 'customer',
+  SUPPLIER = 'supplier',
+  SALES_ORDER = 'sales_order',
+  PURCHASE_ORDER = 'purchase_order',
+  INVOICE = 'invoice',
+  WAREHOUSE = 'warehouse',
+  CATEGORY = 'category',
+}
+
+/**
+ * Custom Field Validation Interface
+ */
+export interface ICustomFieldValidation {
+  min?: number;
+  max?: number;
+  pattern?: string;
+  options?: string[];
+}
+
+/**
+ * Custom Field Document Interface
+ */
+export interface ICustomField extends Document {
+  entityType: CustomFieldEntityType;
+  fieldName: string;
+  fieldLabel: string;
+  fieldType: CustomFieldType;
+  required: boolean;
+  defaultValue?: any;
+  validation?: ICustomFieldValidation;
+  helpText?: string;
+  placeholder?: string;
+  order: number;
+  section?: string;
+  isActive: boolean;
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Workflow Entity Type Enum
+ */
+export enum WorkflowEntityType {
+  SALES_ORDER = 'sales_order',
+  PURCHASE_ORDER = 'purchase_order',
+  INVOICE = 'invoice',
+  RETURN = 'return',
+  CUSTOM = 'custom',
+}
+
+/**
+ * Workflow Status Interface
+ */
+export interface IWorkflowStatus {
+  key: string;
+  label: string;
+  color: string;
+  icon?: string;
+  description?: string;
+  isInitial: boolean;
+  isFinal: boolean;
+  order: number;
+  actions?: string[];
+}
+
+/**
+ * Workflow Transition Interface
+ */
+export interface IWorkflowTransition {
+  from: string;
+  to: string;
+  label: string;
+  requiresPermission?: string[];
+  requiresConfirmation?: boolean;
+  confirmationMessage?: string;
+  webhookUrl?: string;
+  emailNotification?: boolean;
+  conditions?: any;
+}
+
+/**
+ * Workflow Definition Document Interface
+ */
+export interface IWorkflowDefinition extends Document {
+  name: string;
+  entityType: WorkflowEntityType;
+  statuses: IWorkflowStatus[];
+  transitions: IWorkflowTransition[];
+  isActive: boolean;
+  isDefault: boolean;
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Methods
+  validateWorkflow(): {
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  };
+  getInitialStatus(): IWorkflowStatus | undefined;
+  getStatusByKey(key: string): IWorkflowStatus | undefined;
+  getAllowedTransitions(statusKey: string): IWorkflowTransition[];
+}
+
+/**
+ * Status History Document Interface
+ */
+export interface IStatusHistory extends Document {
+  entityType: WorkflowEntityType;
+  entityId: Types.ObjectId;
+  fromStatus?: string;
+  toStatus: string;
+  changedBy: Types.ObjectId;
+  changedAt: Date;
+  notes?: string;
+  metadata?: any;
+  duration?: number;
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Methods
+  getFormattedDuration(): string;
 }

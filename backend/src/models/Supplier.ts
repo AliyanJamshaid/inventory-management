@@ -131,6 +131,15 @@ const supplierSchema = new Schema<ISupplier>(
     },
 
     /**
+     * Custom fields (user-defined dynamic fields)
+     */
+    customFields: {
+      type: Map,
+      of: Schema.Types.Mixed,
+      default: new Map(),
+    },
+
+    /**
      * Whether the supplier is active
      */
     isActive: {

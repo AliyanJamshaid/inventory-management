@@ -94,6 +94,15 @@ const warehouseSchema = new Schema<IWarehouse>(
     },
 
     /**
+     * Custom fields (user-defined dynamic fields)
+     */
+    customFields: {
+      type: Map,
+      of: Schema.Types.Mixed,
+      default: new Map(),
+    },
+
+    /**
      * Whether the warehouse is active
      */
     isActive: {

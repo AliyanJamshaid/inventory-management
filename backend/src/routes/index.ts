@@ -21,6 +21,10 @@ import purchaseOrderRoutes from './purchaseOrderRoutes';
 import salesOrderRoutes from './salesOrderRoutes';
 import invoiceRoutes from './invoiceRoutes';
 import paymentRoutes from './paymentRoutes';
+import customFieldRoutes from './customFieldRoutes';
+import workflowRoutes from './workflowRoutes';
+import roleRoutes from './roleRoutes';
+import permissionRoutes from './permissionRoutes';
 
 const router = Router();
 
@@ -34,11 +38,18 @@ router.use('/auth', authRoutes);
 // User management routes
 router.use('/users', userRoutes);
 
+// Role and Permission routes
+router.use('/roles', roleRoutes);
+router.use('/permissions', permissionRoutes);
+
 // System routes
 router.use('/system', systemRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/reports', reportRoutes);
 router.use('/notifications', notificationRoutes);
+
+// Custom fields routes
+router.use('/custom-fields', customFieldRoutes);
 
 // Product and Inventory Management routes
 router.use('/categories', categoryRoutes);
@@ -58,5 +69,8 @@ router.use('/sales-orders', salesOrderRoutes);
 // Invoice and payment routes
 router.use('/invoices', invoiceRoutes);
 router.use('/payments', paymentRoutes);
+
+// Workflow routes
+router.use('/workflows', workflowRoutes);
 
 export default router;

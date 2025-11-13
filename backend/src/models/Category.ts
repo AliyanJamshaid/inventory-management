@@ -56,6 +56,15 @@ const categorySchema = new Schema<ICategory>(
     },
 
     /**
+     * Custom fields (user-defined dynamic fields)
+     */
+    customFields: {
+      type: Map,
+      of: Schema.Types.Mixed,
+      default: new Map(),
+    },
+
+    /**
      * Whether the category is active
      */
     isActive: {

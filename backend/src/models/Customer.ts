@@ -150,6 +150,15 @@ const customerSchema = new Schema<ICustomer>(
     },
 
     /**
+     * Custom fields (user-defined dynamic fields)
+     */
+    customFields: {
+      type: Map,
+      of: Schema.Types.Mixed,
+      default: new Map(),
+    },
+
+    /**
      * Whether the customer account is active
      */
     isActive: {
