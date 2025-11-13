@@ -1,0 +1,201 @@
+# ==============================================
+# DEPENDENCIES
+# ==============================================
+node_modules/
+jspm_packages/
+bower_components/
+
+# Package manager lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-debug.log
+
+# ==============================================
+# BUILD OUTPUTS
+# ==============================================
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.vuepress/dist/
+.temp/
+.docusaurus/
+
+# ==============================================
+# ENVIRONMENT VARIABLES
+# ==============================================
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
+# ==============================================
+# LOGS
+# ==============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# ==============================================
+# TESTING & COVERAGE
+# ==============================================
+coverage/
+.nyc_output/
+*.lcov
+.coverage/
+junit.xml
+test-results/
+playwright-report/
+
+# ==============================================
+# TYPESCRIPT
+# ==============================================
+*.tsbuildinfo
+*.tsbuildinfo.*
+
+# ==============================================
+# IDE & EDITORS
+# ==============================================
+
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ==============================================
+# OS FILES
+# ==============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+
+# ==============================================
+# TEMPORARY FILES
+# ==============================================
+tmp/
+temp/
+*.tmp
+*.temp
+*.cache
+
+# ==============================================
+# DATABASE
+# ==============================================
+*.sqlite
+*.sqlite3
+*.db
+data/
+mongodb_data/
+
+# ==============================================
+# UPLOADS & MEDIA
+# ==============================================
+uploads/
+public/uploads/
+static/uploads/
+
+# ==============================================
+# BACKUPS
+# ==============================================
+backups/
+*.backup
+*.bak
+*.old
+
+# ==============================================
+# DOCKER
+# ==============================================
+docker-compose.override.yml
+.dockerignore
+
+# ==============================================
+# MISC
+# ==============================================
+.turbo
+.vercel
+.netlify
+.firebase/
+.serverless/
+
+# ==============================================
+# CERTIFICATES & KEYS
+# ==============================================
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+
+# ==============================================
+# SECURITY
+# ==============================================
+.secrets/
+secrets/
+credentials/
+*.credentials
+
+# ==============================================
+# DOCUMENTATION
+# ==============================================
+docs/.vitepress/cache
+docs/.vitepress/dist
+
+# ==============================================
+# MONOREPO
+# ==============================================
+.eslintcache
+.stylelintcache
