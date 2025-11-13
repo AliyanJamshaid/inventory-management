@@ -22,6 +22,7 @@ import { seedInvoices } from './invoiceSeeder';
 import { seedTransactions } from './transactionSeeder';
 import { seedNotifications } from './notificationSeeder';
 import { seedSettings } from './settingsSeeder';
+import { seedCurrencies } from './currencySeeder';
 
 // Load environment variables
 dotenv.config();
@@ -45,60 +46,64 @@ const runSeeders = async (): Promise<void> => {
     // Run seeders in order
     logger.info('Starting database seeding process...\n');
 
-    // 1. Seed Users (must be first as they're referenced by other collections)
-    logger.info('[1/14] Seeding users...');
+    // 1. Seed Currencies (must be first for multi-currency support)
+    logger.info('[1/15] Seeding currencies...');
+    await seedCurrencies();
+
+    // 2. Seed Users (referenced by other collections)
+    logger.info('[2/15] Seeding users...');
     await seedUsers();
 
-    // 2. Seed Roles and Permissions
-    logger.info('[2/14] Seeding roles and permissions...');
+    // 3. Seed Roles and Permissions
+    logger.info('[3/15] Seeding roles and permissions...');
     await seedRoles();
 
-    // 3. Seed Categories
-    logger.info('[3/14] Seeding categories...');
+    // 4. Seed Categories
+    logger.info('[4/15] Seeding categories...');
     await seedCategories();
 
-    // 4. Seed Suppliers
-    logger.info('[4/14] Seeding suppliers...');
+    // 5. Seed Suppliers
+    logger.info('[5/15] Seeding suppliers...');
     await seedSuppliers();
 
-    // 5. Seed Warehouses and Locations
-    logger.info('[5/14] Seeding warehouses and storage locations...');
+    // 6. Seed Warehouses and Locations
+    logger.info('[6/15] Seeding warehouses and storage locations...');
     await seedWarehouses();
 
-    // 6. Seed Products
-    logger.info('[6/14] Seeding products...');
+    // 7. Seed Products
+    logger.info('[7/15] Seeding products...');
     await seedProducts();
 
-    // 7. Seed Stock
-    logger.info('[7/14] Seeding stock records...');
+    // 8. Seed Stock
+    logger.info('[8/15] Seeding stock records...');
     await seedStock();
 
-    // 8. Seed Customers
-    logger.info('[8/14] Seeding customers...');
+    // 9. Seed Customers
+    logger.info('[9/15] Seeding customers...');
     await seedCustomers();
 
-    // 9. Seed Purchase Orders
-    logger.info('[9/14] Seeding purchase orders...');
+    // 10. Seed Purchase Orders
+    logger.info('[10/15] Seeding purchase orders...');
     await seedPurchaseOrders();
 
-    // 10. Seed Sales Orders
-    logger.info('[10/14] Seeding sales orders...');
+    // 11. Seed Sales Orders
+    logger.info('[11/15] Seeding sales orders...');
     await seedSalesOrders();
 
-    // 11. Seed Invoices and Payments
-    logger.info('[11/14] Seeding invoices and payments...');
+    // 12. Seed Invoices and Payments
+    logger.info('[12/15] Seeding invoices and payments...');
     await seedInvoices();
 
-    // 12. Seed Stock Transactions
-    logger.info('[12/14] Seeding stock transactions...');
+    // 13. Seed Stock Transactions
+    logger.info('[13/15] Seeding stock transactions...');
     await seedTransactions();
 
-    // 13. Seed Notifications
-    logger.info('[13/14] Seeding notifications...');
+    // 14. Seed Notifications
+    logger.info('[14/15] Seeding notifications...');
     await seedNotifications();
 
-    // 14. Seed System Settings
-    logger.info('[14/14] Seeding system settings...');
+    // 15. Seed System Settings
+    logger.info('[15/15] Seeding system settings...');
     await seedSettings();
 
     const endTime = Date.now();

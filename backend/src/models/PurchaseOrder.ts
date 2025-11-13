@@ -136,6 +136,36 @@ const purchaseOrderSchema = new Schema<IPurchaseOrder>(
     },
 
     /**
+     * Currency code (ISO 4217)
+     */
+    currency: {
+      type: String,
+      uppercase: true,
+      trim: true,
+      minlength: [3, 'Currency code must be 3 characters'],
+      maxlength: [3, 'Currency code must be 3 characters'],
+      default: 'USD',
+    },
+
+    /**
+     * Exchange rate at time of transaction
+     */
+    exchangeRate: {
+      type: Number,
+      default: 1.0,
+      min: [0, 'Exchange rate must be positive'],
+    },
+
+    /**
+     * Total amount in base currency
+     */
+    amountInBaseCurrency: {
+      type: Number,
+      default: 0,
+      min: [0, 'Amount in base currency cannot be negative'],
+    },
+
+    /**
      * User who approved the order
      */
     approvedBy: {
@@ -192,9 +222,9 @@ purchaseOrderSchema.index({ createdBy: 1 });
 purchaseOrderSchema.index({ orderDate: -1 });
 
 /**
- * Pre-save middleware to calculate totals
+ * Pre-save middleware to calculate totals and base currency amount
  */
-purchaseOrderSchema.pre('save', function (next) {
+purchaseOrderSchema.pre('save', async function (next) {
   // Calculate item totals
   this.items.forEach((item) => {
     item.total = item.quantity * item.unitPrice + item.tax;
@@ -210,6 +240,25 @@ purchaseOrderSchema.pre('save', function (next) {
 
   // Calculate grand total
   this.total = this.subtotal + this.tax + this.shipping;
+
+  // Calculate amount in base currency
+  try {
+    const Currency = mongoose.model('Currency');
+    const baseCurrency = await Currency.getBaseCurrency();
+
+    if (baseCurrency && this.currency && this.exchangeRate) {
+      if (this.currency === baseCurrency.code) {
+        this.amountInBaseCurrency = this.total;
+      } else {
+        this.amountInBaseCurrency = this.total / this.exchangeRate;
+      }
+    } else {
+      this.amountInBaseCurrency = this.total;
+    }
+  } catch (error) {
+    console.error('Error calculating base currency amount:', error);
+    this.amountInBaseCurrency = this.total;
+  }
 
   next();
 });

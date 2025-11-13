@@ -143,6 +143,36 @@ const salesOrderSchema = new Schema<ISalesOrder>(
     },
 
     /**
+     * Currency code (ISO 4217)
+     */
+    currency: {
+      type: String,
+      uppercase: true,
+      trim: true,
+      minlength: [3, 'Currency code must be 3 characters'],
+      maxlength: [3, 'Currency code must be 3 characters'],
+      default: 'USD',
+    },
+
+    /**
+     * Exchange rate at time of transaction
+     */
+    exchangeRate: {
+      type: Number,
+      default: 1.0,
+      min: [0, 'Exchange rate must be positive'],
+    },
+
+    /**
+     * Total amount in base currency
+     */
+    amountInBaseCurrency: {
+      type: Number,
+      default: 0,
+      min: [0, 'Amount in base currency cannot be negative'],
+    },
+
+    /**
      * Payment status
      */
     paymentStatus: {
@@ -202,9 +232,9 @@ salesOrderSchema.index({ createdBy: 1 });
 salesOrderSchema.index({ orderDate: -1 });
 
 /**
- * Pre-save middleware to calculate totals
+ * Pre-save middleware to calculate totals and base currency amount
  */
-salesOrderSchema.pre('save', function (next) {
+salesOrderSchema.pre('save', async function (next) {
   // Calculate item totals
   this.items.forEach((item) => {
     const itemSubtotal = item.quantity * item.unitPrice;
@@ -224,6 +254,28 @@ salesOrderSchema.pre('save', function (next) {
 
   // Calculate grand total
   this.total = this.subtotal - this.discount + this.tax + this.shipping;
+
+  // Calculate amount in base currency
+  try {
+    const Currency = mongoose.model('Currency');
+    const baseCurrency = await Currency.getBaseCurrency();
+
+    if (baseCurrency && this.currency && this.exchangeRate) {
+      // Convert to base currency amount for reporting
+      if (this.currency === baseCurrency.code) {
+        this.amountInBaseCurrency = this.total;
+      } else {
+        // total / exchangeRate gives us the amount in base currency
+        this.amountInBaseCurrency = this.total / this.exchangeRate;
+      }
+    } else {
+      // If no base currency set, use total as-is
+      this.amountInBaseCurrency = this.total;
+    }
+  } catch (error) {
+    console.error('Error calculating base currency amount:', error);
+    this.amountInBaseCurrency = this.total;
+  }
 
   next();
 });

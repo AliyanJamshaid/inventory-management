@@ -32,6 +32,9 @@ import { sendSuccess } from './utils/responses';
 // Route imports
 import routes from './routes';
 
+// Job imports
+import { scheduleRateUpdates } from './jobs/currencyRateUpdater';
+
 /**
  * Create Express application
  */
@@ -226,6 +229,10 @@ const startServer = async (): Promise<void> => {
     // Connect to MongoDB
     logger.info('Connecting to MongoDB...');
     await connectDatabase();
+
+    // Start scheduled jobs
+    logger.info('Starting scheduled jobs...');
+    scheduleRateUpdates();
 
     // Start Express server
     app.listen(config.port, () => {

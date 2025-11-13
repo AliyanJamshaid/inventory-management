@@ -25,6 +25,8 @@ import Settings from './Settings';
 import CustomField from './CustomField';
 import WorkflowDefinition from './WorkflowDefinition';
 import StatusHistory from './StatusHistory';
+import Currency from './Currency';
+import ExchangeRate from './ExchangeRate';
 
 export {
   Category,
@@ -49,6 +51,8 @@ export {
   CustomField,
   WorkflowDefinition,
   StatusHistory,
+  Currency,
+  ExchangeRate,
 };
 
 export default {
@@ -74,4 +78,6 @@ export default {
   CustomField,
   WorkflowDefinition,
   StatusHistory,
+  Currency,
+  ExchangeRate,
 };

@@ -217,6 +217,18 @@ export interface IProductVariant extends Document {
 }
 
 /**
+ * Barcode Type Enum
+ */
+export enum BarcodeType {
+  EAN13 = 'EAN13',
+  UPC = 'UPC',
+  CODE128 = 'CODE128',
+  CODE39 = 'CODE39',
+  QR = 'QR',
+  INTERNAL = 'INTERNAL',
+}
+
+/**
  * Product Document Interface
  */
 export interface IProduct extends Document {
@@ -224,12 +236,16 @@ export interface IProduct extends Document {
   description?: string;
   sku: string;
   barcode?: string;
+  barcodeType?: BarcodeType;
+  qrCode?: string;
+  alternativeBarcodes?: string[];
   category?: Types.ObjectId;
   supplier?: Types.ObjectId;
   unit: string;
   costPrice: number;
   sellingPrice: number;
   tax: number;
+  prices: Map<string, number>; // Multi-currency prices (currency code → price)
   images: string[];
   variants: Types.ObjectId[];
   attributes: Map<string, any>;
@@ -238,6 +254,11 @@ export interface IProduct extends Document {
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
+
+  // Methods
+  addVariant(variantId: Types.ObjectId): Promise<void>;
+  removeVariant(variantId: Types.ObjectId): Promise<void>;
+  getPriceInCurrency(currencyCode: string): Promise<number>;
 }
 
 /**
@@ -370,6 +391,9 @@ export interface IPurchaseOrder extends Document {
   tax: number;
   shipping: number;
   total: number;
+  currency: string; // Currency code (ISO 4217)
+  exchangeRate: number; // Exchange rate at time of transaction
+  amountInBaseCurrency: number; // Total amount in base currency
   customFields: Map<string, any>;
   approvedBy?: Types.ObjectId;
   receivedBy?: Types.ObjectId;
@@ -434,6 +458,9 @@ export interface ISalesOrder extends Document {
   tax: number;
   shipping: number;
   total: number;
+  currency: string; // Currency code (ISO 4217)
+  exchangeRate: number; // Exchange rate at time of transaction
+  amountInBaseCurrency: number; // Total amount in base currency
   paymentStatus: PaymentStatus;
   customFields: Map<string, any>;
   processedBy?: Types.ObjectId;
@@ -474,6 +501,9 @@ export interface IInvoice extends Document {
   total: number;
   paidAmount: number;
   balanceAmount: number;
+  currency: string; // Currency code (ISO 4217)
+  exchangeRate: number; // Exchange rate at time of transaction
+  amountInBaseCurrency: number; // Total amount in base currency
   paymentMethod?: PaymentMethod;
   customFields: Map<string, any>;
   notes?: string;
@@ -683,4 +713,76 @@ export interface IStatusHistory extends Document {
 
   // Methods
   getFormattedDuration(): string;
+}
+
+/**
+ * Label Template Type Enum
+ */
+export enum LabelTemplateType {
+  PRODUCT = 'product',
+  LOCATION = 'location',
+  BOX = 'box',
+  ASSET = 'asset',
+  PRICE_TAG = 'price_tag',
+}
+
+/**
+ * Label Layout Interface
+ */
+export interface ILabelLayout {
+  showBarcode: boolean;
+  showQRCode: boolean;
+  showProductName: boolean;
+  showPrice: boolean;
+  showSKU: boolean;
+  showDescription: boolean;
+  showCategory: boolean;
+  fontSize: number;
+  barcodeHeight: number;
+}
+
+/**
+ * Label Template Document Interface
+ */
+export interface ILabelTemplate extends Document {
+  name: string;
+  type: LabelTemplateType;
+  width: number;
+  height: number;
+  layout: ILabelLayout;
+  isDefault: boolean;
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Currency Document Interface
+ */
+export interface ICurrency extends Document {
+  code: string; // ISO 4217 code (USD, EUR, GBP, etc.)
+  name: string; // US Dollar, Euro, British Pound
+  symbol: string; // $, €, £
+  decimalPlaces: number; // 2 for most, 0 for JPY
+  exchangeRate: number; // rate to base currency
+  isBaseCurrency: boolean; // only one can be true
+  isActive: boolean;
+  lastUpdated: Date; // last time exchange rate was updated
+  createdAt: Date;
+  updatedAt: Date;
+
+  // Methods
+  formatAmount(amount: number): string;
+}
+
+/**
+ * Exchange Rate Document Interface
+ */
+export interface IExchangeRate extends Document {
+  fromCurrency: string; // Currency code
+  toCurrency: string; // Currency code
+  rate: number;
+  date: Date;
+  source?: string; // API source (e.g., "exchangerate-api.com")
+  createdAt: Date;
 }

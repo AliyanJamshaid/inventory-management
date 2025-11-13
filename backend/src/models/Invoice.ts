@@ -166,6 +166,36 @@ const invoiceSchema = new Schema<IInvoice>(
     },
 
     /**
+     * Currency code (ISO 4217)
+     */
+    currency: {
+      type: String,
+      uppercase: true,
+      trim: true,
+      minlength: [3, 'Currency code must be 3 characters'],
+      maxlength: [3, 'Currency code must be 3 characters'],
+      default: 'USD',
+    },
+
+    /**
+     * Exchange rate at time of transaction
+     */
+    exchangeRate: {
+      type: Number,
+      default: 1.0,
+      min: [0, 'Exchange rate must be positive'],
+    },
+
+    /**
+     * Total amount in base currency
+     */
+    amountInBaseCurrency: {
+      type: Number,
+      default: 0,
+      min: [0, 'Amount in base currency cannot be negative'],
+    },
+
+    /**
      * Payment method used
      */
     paymentMethod: {
@@ -235,9 +265,9 @@ invoiceSchema.virtual('daysOverdue').get(function () {
 });
 
 /**
- * Pre-save middleware to calculate totals and update status
+ * Pre-save middleware to calculate totals, base currency amount, and update status
  */
-invoiceSchema.pre('save', function (next) {
+invoiceSchema.pre('save', async function (next) {
   // Calculate item totals
   this.items.forEach((item) => {
     const itemSubtotal = item.quantity * item.unitPrice;
@@ -260,6 +290,25 @@ invoiceSchema.pre('save', function (next) {
 
   // Calculate balance
   this.balanceAmount = Math.max(0, this.total - this.paidAmount);
+
+  // Calculate amount in base currency
+  try {
+    const Currency = mongoose.model('Currency');
+    const baseCurrency = await Currency.getBaseCurrency();
+
+    if (baseCurrency && this.currency && this.exchangeRate) {
+      if (this.currency === baseCurrency.code) {
+        this.amountInBaseCurrency = this.total;
+      } else {
+        this.amountInBaseCurrency = this.total / this.exchangeRate;
+      }
+    } else {
+      this.amountInBaseCurrency = this.total;
+    }
+  } catch (error) {
+    console.error('Error calculating base currency amount:', error);
+    this.amountInBaseCurrency = this.total;
+  }
 
   // Auto-update status based on payment
   if (this.paidAmount >= this.total && this.status !== InvoiceStatus.CANCELLED) {

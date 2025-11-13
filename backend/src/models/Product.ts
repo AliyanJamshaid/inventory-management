@@ -47,6 +47,31 @@ const productSchema = new Schema<IProduct>(
     },
 
     /**
+     * Barcode type
+     */
+    barcodeType: {
+      type: String,
+      enum: ['EAN13', 'UPC', 'CODE128', 'CODE39', 'QR', 'INTERNAL'],
+      trim: true,
+    },
+
+    /**
+     * QR Code data (JSON string)
+     */
+    qrCode: {
+      type: String,
+      trim: true,
+    },
+
+    /**
+     * Alternative barcodes for the product
+     */
+    alternativeBarcodes: {
+      type: [String],
+      default: [],
+    },
+
+    /**
      * Reference to product category
      */
     category: {
@@ -98,6 +123,15 @@ const productSchema = new Schema<IProduct>(
       default: 0,
       min: [0, 'Tax cannot be negative'],
       max: [100, 'Tax cannot exceed 100%'],
+    },
+
+    /**
+     * Multi-currency prices (currency code → price)
+     */
+    prices: {
+      type: Map,
+      of: Number,
+      default: new Map(),
     },
 
     /**
@@ -162,7 +196,8 @@ const productSchema = new Schema<IProduct>(
 
 // Indexes
 productSchema.index({ sku: 1 }, { unique: true });
-productSchema.index({ barcode: 1 }, { sparse: true });
+productSchema.index({ barcode: 1 }, { sparse: true, unique: true });
+productSchema.index({ alternativeBarcodes: 1 }, { sparse: true });
 productSchema.index({ name: 'text', description: 'text' });
 productSchema.index({ category: 1 });
 productSchema.index({ supplier: 1 });
@@ -228,6 +263,24 @@ productSchema.statics.findBySKU = function (sku: string) {
 };
 
 /**
+ * Static method to find product by barcode
+ * @param barcode - Product barcode
+ * @returns Product document
+ */
+productSchema.statics.findByBarcode = function (barcode: string) {
+  return this.findOne({
+    $or: [
+      { barcode },
+      { alternativeBarcodes: barcode }
+    ],
+    isActive: true
+  })
+    .populate('category')
+    .populate('supplier')
+    .populate('variants');
+};
+
+/**
  * Static method to search products by name or description
  * @param query - Search query
  * @returns Array of product documents
@@ -275,6 +328,39 @@ productSchema.methods.addVariant = async function (variantId: mongoose.Types.Obj
 productSchema.methods.removeVariant = async function (variantId: mongoose.Types.ObjectId) {
   this.variants = this.variants.filter((id) => id.toString() !== variantId.toString());
   await this.save();
+};
+
+/**
+ * Instance method to get price in specific currency
+ * @param currencyCode - Currency code
+ * @returns Price in the specified currency
+ */
+productSchema.methods.getPriceInCurrency = async function (currencyCode: string): Promise<number> {
+  const code = currencyCode.toUpperCase();
+
+  // Check if price is explicitly set for this currency
+  if (this.prices && this.prices.has(code)) {
+    return this.prices.get(code);
+  }
+
+  // Otherwise, convert from base price
+  const Currency = mongoose.model('Currency');
+  const currencyService = require('../services/currencyService').default;
+
+  const baseCurrency = await Currency.getBaseCurrency();
+  if (!baseCurrency) {
+    // If no base currency, return selling price as-is
+    return this.sellingPrice;
+  }
+
+  // Convert sellingPrice from base currency to requested currency
+  const convertedPrice = await currencyService.convertAmount(
+    this.sellingPrice,
+    baseCurrency.code,
+    code
+  );
+
+  return convertedPrice;
 };
 
 const Product = mongoose.model<IProduct>('Product', productSchema);

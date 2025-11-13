@@ -25,6 +25,8 @@ import customFieldRoutes from './customFieldRoutes';
 import workflowRoutes from './workflowRoutes';
 import roleRoutes from './roleRoutes';
 import permissionRoutes from './permissionRoutes';
+import barcodeRoutes from './barcodeRoutes';
+import currencyRoutes from './currencyRoutes';
 
 const router = Router();
 
@@ -58,6 +60,9 @@ router.use('/warehouses', warehouseRoutes);
 router.use('/stock', stockRoutes);
 router.use('/transactions', transactionRoutes);
 
+// Barcode routes
+router.use('/barcodes', barcodeRoutes);
+
 // Supplier and customer management routes
 router.use('/suppliers', supplierRoutes);
 router.use('/customers', customerRoutes);
@@ -72,5 +77,8 @@ router.use('/payments', paymentRoutes);
 
 // Workflow routes
 router.use('/workflows', workflowRoutes);
+
+// Currency routes
+router.use('/currencies', currencyRoutes);
 
 export default router;
