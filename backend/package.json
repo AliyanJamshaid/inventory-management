@@ -10,7 +10,10 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "test": "jest --coverage",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "seed": "ts-node src/seeds/index.ts",
+    "seed:fresh": "npm run db:drop -- --confirm && npm run seed",
+    "db:drop": "ts-node src/seeds/drop.ts"
   },
   "keywords": [
     "inventory",

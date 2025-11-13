@@ -129,6 +129,9 @@ export interface IUser extends Document {
   isTwoFactorEnabled: boolean;
   twoFactorSecret?: string;
   lastLogin?: Date;
+  refreshTokens: string[];
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 
@@ -136,6 +139,10 @@ export interface IUser extends Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
   generateAuthToken(): string;
   generateRefreshToken(): string;
+  addRefreshToken(token: string): Promise<void>;
+  removeRefreshToken(token: string): Promise<void>;
+  clearRefreshTokens(): Promise<void>;
+  createPasswordResetToken(): string;
 }
 
 /**

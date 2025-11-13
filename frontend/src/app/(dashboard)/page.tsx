@@ -1,41 +1,81 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, DollarSign, AlertTriangle, ShoppingCart } from "lucide-react";
+import { Package, DollarSign, AlertTriangle, ShoppingCart, TrendingUp, Users } from "lucide-react";
+import StatsCard from "@/components/dashboard/StatsCard";
+import RevenueChart from "@/components/dashboard/RevenueChart";
+import SalesChart from "@/components/dashboard/SalesChart";
+import StockChart from "@/components/dashboard/StockChart";
+import TopProductsTable from "@/components/dashboard/TopProductsTable";
+import LowStockAlerts from "@/components/dashboard/LowStockAlerts";
+import RecentActivity from "@/components/dashboard/RecentActivity";
+import { useDashboardStats, useLowStockItems, useInventoryAnalytics, useRevenueAnalytics, useSalesAnalytics } from "@/hooks/useAnalytics";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function DashboardPage() {
+  // Fetch dashboard data
+  const { data: dashboardStats, isLoading: isDashboardLoading } = useDashboardStats();
+  const { data: lowStockItems, isLoading: isLowStockLoading } = useLowStockItems();
+  const { data: inventoryAnalytics, isLoading: isInventoryLoading } = useInventoryAnalytics();
+  const { data: revenueAnalytics, isLoading: isRevenueLoading } = useRevenueAnalytics({
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    endDate: new Date().toISOString(),
+  });
+  const { data: salesAnalytics, isLoading: isSalesLoading } = useSalesAnalytics({
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    endDate: new Date().toISOString(),
+    groupBy: 'daily',
+  });
+
+  // Stats cards data
   const stats = [
     {
       title: "Total Products",
-      value: "2,345",
+      value: isDashboardLoading ? "..." : dashboardStats?.totalProducts.toLocaleString() || "0",
       icon: Package,
-      description: "+12% from last month",
+      description: "Active products in inventory",
       color: "text-blue-600",
       bgColor: "bg-blue-100",
     },
     {
       title: "Inventory Value",
-      value: "$453,678",
+      value: isDashboardLoading ? "..." : `$${dashboardStats?.totalStockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` || "$0",
       icon: DollarSign,
-      description: "+8% from last month",
+      description: "Total stock valuation",
       color: "text-green-600",
       bgColor: "bg-green-100",
     },
     {
       title: "Low Stock Items",
-      value: "23",
+      value: isDashboardLoading ? "..." : dashboardStats?.lowStockCount || "0",
       icon: AlertTriangle,
       description: "Need attention",
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",
     },
     {
-      title: "Pending Orders",
-      value: "145",
+      title: "Orders This Month",
+      value: isDashboardLoading ? "..." : dashboardStats?.orders.month || "0",
       icon: ShoppingCart,
-      description: "+5% from last month",
+      description: `${dashboardStats?.orders.week || 0} this week`,
       color: "text-purple-600",
       bgColor: "bg-purple-100",
+    },
+    {
+      title: "Monthly Revenue",
+      value: isDashboardLoading ? "..." : `$${dashboardStats?.revenue.month.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` || "$0",
+      icon: TrendingUp,
+      description: `$${dashboardStats?.revenue.week.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || 0} this week`,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-100",
+    },
+    {
+      title: "Today's Revenue",
+      value: isDashboardLoading ? "..." : `$${dashboardStats?.revenue.today.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` || "$0",
+      icon: DollarSign,
+      description: `${dashboardStats?.orders.today || 0} orders today`,
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-100",
     },
   ];
 
@@ -49,89 +89,122 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {stat.title}
-              </CardTitle>
-              <div className={`rounded-lg p-2 ${stat.bgColor}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                {stat.description}
-              </p>
-            </CardContent>
-          </Card>
+          <StatsCard key={stat.title} {...stat} />
         ))}
       </div>
 
-      {/* Recent Activity */}
+      {/* Charts Row */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Sales Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between border-b pb-3 last:border-0"
-                >
-                  <div>
-                    <p className="font-medium">Order #SO-{1000 + i}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Customer {i}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">${(Math.random() * 5000).toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">Pending</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Revenue Chart */}
+        {isRevenueLoading ? (
+          <Card>
+            <CardContent className="pt-6">
+              <Skeleton className="h-[300px] w-full" />
+            </CardContent>
+          </Card>
+        ) : revenueAnalytics?.profitData ? (
+          <RevenueChart
+            data={revenueAnalytics.profitData}
+            title="Revenue & Profit Trends"
+            description="Last 30 days"
+          />
+        ) : null}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Low Stock Alert</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { name: "Product A", stock: 5, reorder: 20 },
-                { name: "Product B", stock: 8, reorder: 25 },
-                { name: "Product C", stock: 3, reorder: 15 },
-                { name: "Product D", stock: 12, reorder: 30 },
-              ].map((product, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between border-b pb-3 last:border-0"
-                >
-                  <div>
-                    <p className="font-medium">{product.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Reorder level: {product.reorder}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-yellow-600">
-                      {product.stock} units
-                    </p>
-                    <p className="text-sm text-muted-foreground">In stock</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Sales by Category Chart */}
+        {isSalesLoading ? (
+          <Card>
+            <CardContent className="pt-6">
+              <Skeleton className="h-[300px] w-full" />
+            </CardContent>
+          </Card>
+        ) : salesAnalytics?.salesByCategory ? (
+          <SalesChart
+            data={salesAnalytics.salesByCategory.map(cat => ({
+              name: cat.categoryName,
+              totalSales: cat.totalSales,
+              totalQuantity: cat.totalQuantity,
+            }))}
+            title="Sales by Category"
+            description="Top performing categories"
+          />
+        ) : null}
+      </div>
+
+      {/* Stock Distribution Chart */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          {isInventoryLoading ? (
+            <Card>
+              <CardContent className="pt-6">
+                <Skeleton className="h-[300px] w-full" />
+              </CardContent>
+            </Card>
+          ) : inventoryAnalytics?.stockByWarehouse ? (
+            <StockChart
+              data={inventoryAnalytics.stockByWarehouse}
+              title="Stock Distribution"
+              description="By warehouse"
+            />
+          ) : null}
+        </div>
+
+        {/* Top Products Table */}
+        <div className="lg:col-span-2">
+          {isDashboardLoading ? (
+            <Card>
+              <CardContent className="pt-6">
+                <Skeleton className="h-[300px] w-full" />
+              </CardContent>
+            </Card>
+          ) : dashboardStats?.topProducts ? (
+            <TopProductsTable
+              data={dashboardStats.topProducts}
+              title="Top Selling Products"
+              description="Best performers this period"
+            />
+          ) : null}
+        </div>
+      </div>
+
+      {/* Alerts and Activity */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Low Stock Alerts */}
+        {isLowStockLoading ? (
+          <Card>
+            <CardContent className="pt-6">
+              <Skeleton className="h-[300px] w-full" />
+            </CardContent>
+          </Card>
+        ) : lowStockItems && lowStockItems.length > 0 ? (
+          <LowStockAlerts
+            data={lowStockItems.slice(0, 5)}
+            title="Low Stock Alerts"
+            description="Products that need reordering"
+          />
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-muted-foreground">No low stock items</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recent Activity */}
+        {isDashboardLoading ? (
+          <Card>
+            <CardContent className="pt-6">
+              <Skeleton className="h-[300px] w-full" />
+            </CardContent>
+          </Card>
+        ) : dashboardStats?.recentActivities ? (
+          <RecentActivity
+            data={dashboardStats.recentActivities}
+            title="Recent Activity"
+            description="Latest system actions"
+          />
+        ) : null}
       </div>
     </div>
   );
